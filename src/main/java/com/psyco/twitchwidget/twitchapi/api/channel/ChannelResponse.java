@@ -1,11 +1,9 @@
 package com.psyco.twitchwidget.twitchapi.api.channel;
 
 import com.google.gson.annotations.SerializedName;
-import com.psyco.twitchwidget.twitchapi.api.ValidResponse;
+import com.psyco.twitchwidget.twitchapi.api.APIResponse;
 
-import java.time.Instant;
-
-public class ChannelResponse extends ValidResponse {
+public class ChannelResponse extends APIResponse {
 
     @SerializedName("mature")                           private boolean mature;
     @SerializedName("status")                           private String status;
@@ -33,7 +31,7 @@ public class ChannelResponse extends ValidResponse {
         return mature;
     }
 
-    public String getStatus() {
+    public String getChannelStatus() {
         return status;
     }
 

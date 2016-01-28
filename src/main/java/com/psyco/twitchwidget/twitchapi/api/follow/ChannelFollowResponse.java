@@ -1,12 +1,10 @@
 package com.psyco.twitchwidget.twitchapi.api.follow;
 
 import com.google.gson.annotations.SerializedName;
-import com.psyco.twitchwidget.twitchapi.api.ValidResponse;
+import com.psyco.twitchwidget.twitchapi.api.APIResponse;
 import com.psyco.twitchwidget.twitchapi.api.channel.ChannelResponse;
 
-import java.time.Instant;
-
-public class ChannelFollowResponse extends ValidResponse {
+public class ChannelFollowResponse extends APIResponse {
 
     @SerializedName("created_at")       private String createdAt;
     @SerializedName("notifications")    private boolean notify;

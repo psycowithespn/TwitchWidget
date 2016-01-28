@@ -1,11 +1,9 @@
 package com.psyco.twitchwidget.twitchapi.api.user;
 
 import com.google.gson.annotations.SerializedName;
-import com.psyco.twitchwidget.twitchapi.api.ValidResponse;
+import com.psyco.twitchwidget.twitchapi.api.APIResponse;
 
-import java.time.Instant;
-
-public class UserResponse extends ValidResponse {
+public class UserResponse extends APIResponse {
 
     @SerializedName("type")         private String type;
     @SerializedName("name")         private String name;

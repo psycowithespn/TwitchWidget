@@ -5,15 +5,17 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.psyco.twitchwidget.twitchapi.api.APIResponse;
-import com.psyco.twitchwidget.twitchapi.api.ErrorResponse;
+import com.psyco.twitchwidget.twitchapi.api.follow.FollowAccessor;
 import com.psyco.twitchwidget.twitchapi.api.root.RootResponse;
+import com.psyco.twitchwidget.util.CallableCallback;
 import com.psyco.twitchwidget.util.CallableCallbackFactory;
+import com.psyco.twitchwidget.util.RunnableException;
 import javafx.application.Platform;
 
 import javax.net.ssl.HttpsURLConnection;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -27,6 +29,7 @@ public class TwitchAPIAccessor {
     private final String clientID = "q9ons4lq6jzz0qxeyqiwh4h7dglpt4q";
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final CallableCallbackFactory callbackFactory;
+    private final FollowAccessor followAccessor;
 
     private String oauthToken;
 
@@ -36,8 +39,8 @@ public class TwitchAPIAccessor {
 
     public TwitchAPIAccessor(String oauthToken) {
         this.oauthToken = oauthToken;
-        callbackFactory = new CallableCallbackFactory(Platform::runLater, executor);
-
+        this.callbackFactory = new CallableCallbackFactory(Platform::runLater, executor);
+        this.followAccessor = new FollowAccessor(this);
     }
 
     public void dispose() {
@@ -49,21 +52,25 @@ public class TwitchAPIAccessor {
     }
 
     public void isOAuthValid(Runnable validCallback, Runnable notValidCallback) {
-        callbackFactory.submit(() -> get(ROOT_URL, RootResponse.class))
+       submitTask(() -> get(ROOT_URL, RootResponse.class))
                 .withOnSucceeded(resp -> isOAuthValid(resp, validCallback, notValidCallback))
                 .withOnException(e -> notValidCallback.run())
                 .start();
     }
 
-    private void isOAuthValid(APIResponse response, Runnable validCallback, Runnable notValidCallback) {
-        if (!response.isError() && ((RootResponse) response).getToken().isValid()) {
+    private void isOAuthValid(RootResponse response, Runnable validCallback, Runnable notValidCallback) {
+        if (!response.isError() && response.getToken().isValid()) {
             validCallback.run();
         } else {
             notValidCallback.run();
         }
     }
 
-    protected APIResponse get(String url, Class<? extends APIResponse> responseType) throws IOException {
+    public FollowAccessor getFollowAccessor() {
+        return followAccessor;
+    }
+
+    public <T extends APIResponse> T get(String url, Class<T> responseType) throws Exception {
         HttpsURLConnection conn = null;
         InputStreamReader reader = null;
         System.out.println("Staring API Request: " + url);
@@ -77,9 +84,18 @@ public class TwitchAPIAccessor {
             }
 
             conn.connect();
-            reader = new InputStreamReader(conn.getInputStream());
+            if (conn.getResponseCode() == 204) {
+                System.out.println("API call successful");
+                return responseType.newInstance();
+            } else if (conn.getResponseCode() / 100 == 2) {
+                reader = new InputStreamReader(conn.getInputStream());
+            } else {
+                reader = new InputStreamReader(conn.getErrorStream());
+            }
             JsonElement jsonElement = JSON_PARSER.parse(reader);
             JsonObject object = jsonElement.getAsJsonObject();
+
+            T response = GSON.fromJson(jsonElement, responseType);
 
             if (object.has("error")) {
                 System.err.printf("Error on API Call: %s", url);
@@ -87,11 +103,13 @@ public class TwitchAPIAccessor {
                         object.get("status").getAsInt(),
                         object.get("error").getAsString(),
                         object.get("message").getAsString());
-                return GSON.fromJson(jsonElement, ErrorResponse.class);
+                // Workaround for ChannelResponse having a different-type field called status.
+                response.setStatus(object.get("status").getAsInt());
             } else {
                 System.out.println("API call successful");
-                return GSON.fromJson(jsonElement, responseType);
             }
+
+            return response;
         } catch (Exception e) {
             System.err.println("API call resulted in an exception: ");
             e.printStackTrace();
@@ -105,5 +123,16 @@ public class TwitchAPIAccessor {
                 reader.close();
             }
         }
+    }
+
+    public <T> CallableCallback<T> submitTask(Callable<T> callable) {
+        return callbackFactory.submit(callable);
+    }
+
+    public CallableCallback<Void> submitTask(RunnableException runnable) {
+        return callbackFactory.submit(() -> {
+            runnable.run();
+            return null;
+        });
     }
 }

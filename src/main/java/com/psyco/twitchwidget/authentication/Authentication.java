@@ -4,14 +4,12 @@ import com.sun.webkit.LoadListenerClient;
 import com.sun.webkit.WebPage;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Scene;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.function.Consumer;
@@ -20,7 +18,6 @@ import java.util.regex.Pattern;
 
 public class Authentication {
 
-    //https://api.twitch.tv/kraken/oauth2/authorize?response_type=token&client_id=q9ons4lq6jzz0qxeyqiwh4h7dglpt4q&redirect_uri=http://localhost&scope=user_read
     private static final Pattern AUTH_TOKEN_PATTERN = Pattern.compile("#access_token=(.+?)&");
     public static final String AUTH_URL = "https://api.twitch.tv/kraken/oauth2/authorize?response_type=token" +
             "&client_id=q9ons4lq6jzz0qxeyqiwh4h7dglpt4q" +
@@ -47,6 +44,7 @@ public class Authentication {
             loadListenerClients.setAccessible(true);
             Object webPage = page.get(webView.getEngine());
             Object loadList = loadListenerClients.get(webPage);
+            @SuppressWarnings("unchecked")
             List<LoadListenerClient> listLoadList = (List<LoadListenerClient>) loadList;
             listLoadList.add(authLoadListenerClient);
         } catch (IllegalAccessException | NoSuchFieldException e) {

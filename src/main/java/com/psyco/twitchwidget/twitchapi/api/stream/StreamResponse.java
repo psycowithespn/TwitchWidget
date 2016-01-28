@@ -1,12 +1,10 @@
 package com.psyco.twitchwidget.twitchapi.api.stream;
 
 import com.google.gson.annotations.SerializedName;
-import com.psyco.twitchwidget.twitchapi.api.ValidResponse;
+import com.psyco.twitchwidget.twitchapi.api.APIResponse;
 import com.psyco.twitchwidget.twitchapi.api.channel.ChannelResponse;
 
-import java.time.Instant;
-
-public class StreamResponse extends ValidResponse {
+public class StreamResponse extends APIResponse {
 
     @SerializedName("game")         private String game;
     @SerializedName("viewers")      private int viewers;

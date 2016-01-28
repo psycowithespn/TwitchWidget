@@ -1,25 +1,20 @@
 package com.psyco.twitchwidget.twitchapi.api.follow;
 
 import com.google.gson.annotations.SerializedName;
-import com.psyco.twitchwidget.twitchapi.api.ValidResponse;
-import com.psyco.twitchwidget.twitchapi.api.channel.ChannelResponse;
+import com.psyco.twitchwidget.twitchapi.api.PageableAPICall;
 
 import java.util.List;
 
-public class UsersFollowedChannelsResponse extends ValidResponse {
+public class UsersFollowedChannelsResponse extends PageableAPICall<ChannelFollowResponse> {
 
-    @SerializedName("_total")   private int total;
     @SerializedName("follows")  private List<ChannelFollowResponse> channels;
 
-    public int getTotal() {
-        return total;
+    @Override
+    public List<ChannelFollowResponse> getContents() {
+        return channels;
     }
 
     public List<ChannelFollowResponse> getChannels() {
         return channels;
-    }
-
-    public String getNextURL() {
-        return getLink("next");
     }
 }

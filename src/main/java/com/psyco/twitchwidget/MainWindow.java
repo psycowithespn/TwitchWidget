@@ -3,19 +3,18 @@ package com.psyco.twitchwidget;
 import com.psyco.twitchwidget.authentication.AuthState;
 import com.psyco.twitchwidget.authentication.Authentication;
 import com.psyco.twitchwidget.twitchapi.TwitchAPIAccessor;
-import javafx.animation.ScaleTransition;
-import javafx.animation.Transition;
+import com.psyco.twitchwidget.twitchapi.api.stream.StreamResponse;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.BorderImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
-import javafx.util.Duration;
+
+import java.util.List;
 
 public class MainWindow extends Application {
 
@@ -35,6 +34,7 @@ public class MainWindow extends Application {
     public void start(Stage primaryStage) {
         //primaryStage.initStyle(StageStyle.TRANSPARENT);
         accessor = new TwitchAPIAccessor();
+
         GridPane root = new GridPane();
         root.setHgap(20);
         root.setVgap(20);
@@ -55,6 +55,10 @@ public class MainWindow extends Application {
         isValid.setOnAction(e -> accessor.isOAuthValid(this::oauthValid, this::oauthInvalid));
         root.add(isValid, 0, 3);
 
+        Button follows = new Button("Get Follows");
+        follows.setOnAction(e -> accessor.getFollowAccessor().getUserStreamsFollowed(this::follows, this::exception));
+        root.add(follows, 0, 4);
+
         ImageView imageView = new ImageView(image);
         imageView.setEffect(new ColorAdjust(0, -1, 0, 0));
 
@@ -64,11 +68,20 @@ public class MainWindow extends Application {
                 "-fx-border-width:3;\n" +
                 "-fx-border-style: dashed;\n");
 
-        root.add(imagePane, 0, 4);
+        root.add(imagePane, 0, 5);
 
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    private void follows(List<StreamResponse> channelFollowResponses) {
+        System.out.println(channelFollowResponses.stream().map(f -> f.getChannel().getName()).reduce((a, b) -> a + ", " + b).get());
+    }
+
+    private void exception(Exception e) {
+        System.err.println("Exception getting User API results");
+        e.printStackTrace();
     }
 
     @Override
@@ -78,6 +91,7 @@ public class MainWindow extends Application {
 
     private void oauthValid() {
         System.out.println("OAuth is valid");
+        accessor.setOauthToken(authStage.getAuthToken());
     }
 
     private void oauthInvalid() {

@@ -1,14 +1,16 @@
 package com.psyco.twitchwidget;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class OSCompat {
 
-    private static final String APP_NAME = "TwitchGUI";
+    private static final String APP_NAME = "TwitchWidget";
     private static final String OS = System.getProperty("os.name").toLowerCase();
 
-    public static Path getDataDir() {
+    public static Path getDataDir() throws IOException {
         Path dataDir;
 
         if (OS.startsWith("windows")) {     // Windows
@@ -21,6 +23,10 @@ public class OSCompat {
             } else {                        // Linux, etc
                 dataDir = Paths.get(userDir, ".local", "share", APP_NAME);
             }
+        }
+
+        if (!Files.exists(dataDir)) {
+            Files.createDirectories(dataDir);
         }
 
         return dataDir;

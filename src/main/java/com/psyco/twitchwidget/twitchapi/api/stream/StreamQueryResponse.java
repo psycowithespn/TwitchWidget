@@ -1,17 +1,17 @@
 package com.psyco.twitchwidget.twitchapi.api.stream;
 
 import com.google.gson.annotations.SerializedName;
-import com.psyco.twitchwidget.twitchapi.api.ValidResponse;
+import com.psyco.twitchwidget.twitchapi.api.PageableAPICall;
 
 import java.util.List;
 
-public class StreamQueryResponse extends ValidResponse {
+public class StreamQueryResponse extends PageableAPICall<StreamResponse> {
 
-    @SerializedName("_total")   private int total;
     @SerializedName("streams")  private List<StreamResponse> streams;
 
-    public int getTotal() {
-        return total;
+    @Override
+    public List<StreamResponse> getContents() {
+        return streams;
     }
 
     public List<StreamResponse> getStreams() {
