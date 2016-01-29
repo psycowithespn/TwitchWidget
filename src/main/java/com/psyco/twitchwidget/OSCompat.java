@@ -10,7 +10,7 @@ public class OSCompat {
     private static final String APP_NAME = "TwitchWidget";
     private static final String OS = System.getProperty("os.name").toLowerCase();
 
-    public static Path getDataDir() throws IOException {
+    public static Path getDataDir() {
         Path dataDir;
 
         if (OS.startsWith("windows")) {     // Windows
@@ -26,7 +26,12 @@ public class OSCompat {
         }
 
         if (!Files.exists(dataDir)) {
-            Files.createDirectories(dataDir);
+            try {
+                Files.createDirectories(dataDir);
+            } catch (IOException e) {
+                System.err.println("Error making data directory.");
+                e.printStackTrace();
+            }
         }
 
         return dataDir;

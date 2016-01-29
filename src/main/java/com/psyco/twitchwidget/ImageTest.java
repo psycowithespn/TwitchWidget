@@ -1,21 +1,10 @@
 package com.psyco.twitchwidget;
 
 import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
-import javafx.animation.Transition;
 import javafx.application.Application;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.scene.Node;
+import javafx.scene.Group;
 import javafx.scene.Scene;
-import javafx.scene.effect.ColorAdjust;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.TilePane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -25,6 +14,8 @@ import java.util.List;
 
 public class ImageTest extends Application {
 
+    private Group pane;
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -32,7 +23,7 @@ public class ImageTest extends Application {
     @Override
     public void start(Stage primaryStage) {
         TileProperties properties = new TileProperties();
-        AnchorPane pane = new AnchorPane();
+        pane = new Group();
         List<FollowingImage> images = new ArrayList<>();
         for (int i = 0; i < 30; i++) {
             FollowingImage instance = new FollowingImage(properties, i);

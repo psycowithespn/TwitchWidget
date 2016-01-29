@@ -104,7 +104,7 @@ public class TwitchAPIAccessor {
                         object.get("error").getAsString(),
                         object.get("message").getAsString());
                 // Workaround for ChannelResponse having a different-type field called status.
-                response.setStatus(object.get("status").getAsInt());
+                response.setStatusCode(object.get("status").getAsInt());
             } else {
                 System.out.println("API call successful");
             }

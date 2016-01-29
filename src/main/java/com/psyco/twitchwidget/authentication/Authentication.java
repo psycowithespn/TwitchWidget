@@ -1,14 +1,17 @@
 package com.psyco.twitchwidget.authentication;
 
+import com.psyco.twitchwidget.authentication.cookies.PersistentCookies;
 import com.sun.webkit.LoadListenerClient;
 import com.sun.webkit.WebPage;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.scene.Scene;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import org.w3c.dom.Element;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -31,11 +34,18 @@ public class Authentication {
 
     private String authToken;
     private boolean authenticating = false;
+    private ChangeListener<AuthState> currentListener;
 
     public Authentication() {
         stage = new Stage();
         webView = new WebView();
         authLoadListenerClient = new AuthLoadListenerClient();
+
+        if (PersistentCookies.loadCookies()) {
+            System.out.println("Cookies loaded.");
+        } else {
+            System.out.println("No cookies loaded.");
+        }
 
         try {
             Field page = WebEngine.class.getDeclaredField("page");
@@ -53,6 +63,12 @@ public class Authentication {
 
         Scene scene = new Scene(webView);
         stage.setScene(scene);
+
+        stage.setOnHidden(e -> {
+            if (authenticating) {
+                authLoadListenerClient.authState.setValue(AuthState.DENIED);
+            }
+        });
     }
 
     public boolean authenticate(boolean forceVerify, Consumer<AuthState> successCallback, Consumer<AuthState> errorCallback) {
@@ -66,7 +82,11 @@ public class Authentication {
 
         authenticating = true;
 
-        authLoadListenerClient.authState.addListener((observable, oldValue, newValue) -> {
+        if (currentListener != null) {
+            authLoadListenerClient.authState.removeListener(currentListener);
+        }
+
+        currentListener = (observable, oldValue, newValue) -> {
             System.out.println(newValue);
             switch (newValue) {
                 case REQUIRES_MANUAL_AUTH:
@@ -74,24 +94,39 @@ public class Authentication {
                     break;
                 case MANUAL_AUTH_SUCCEEDED:
                 case RENEWED_AUTH:
-                    stage.close();
                     authenticating = false;
+                    stage.close();
                     successCallback.accept(newValue);
+                    if (PersistentCookies.saveCookies()) {
+                        System.out.println("Saved cookies for re-authentication.");
+                    } else {
+                        System.out.println("Unable to save re-authentication cookies.");
+                    }
                     break;
                 case ERROR:
                 case DENIED:
-                    stage.close();
                     authenticating = false;
+                    stage.close();
                     errorCallback.accept(newValue);
                     break;
             }
-        });
+        };
+
+        authLoadListenerClient.authState.addListener(currentListener);
+
         if (forceVerify) {
-            webView.getEngine().load(FORCE_AUTH_URL);
-        } else {
-            webView.getEngine().load(AUTH_URL);
+            PersistentCookies.wipeCookies();
         }
+
+        webView.getEngine().load(AUTH_URL);
         return true;
+    }
+
+    private void hideSignUp() {
+        Element element = this.webView.getEngine().getDocument().getElementById("signup_tab");
+        if (element != null) {
+            element.getParentNode().removeChild(element);
+        }
     }
 
     public boolean isAuthenticated() {
@@ -111,14 +146,14 @@ public class Authentication {
 
         @Override
         public void dispatchLoadEvent(long frame, int state, String url, String contentType, double progress, int errorCode) {
+            if (!authenticating) {
+                return;
+            }
+
             if (errorCode != 0) {
                 System.out.println("Error: Authentication failure: " + errorCode + ": " + url);
                 authState.setValue(AuthState.ERROR);
                 return;
-            }
-
-            if (state == PAGE_STARTED || state == PAGE_REDIRECTED || state == PAGE_FINISHED) {
-                System.out.println(state + ": " + url);
             }
 
             switch (state) {
@@ -126,6 +161,7 @@ public class Authentication {
                     if (url.contains(TWITCH_ID)) {
                         authState.setValue(AuthState.REQUIRES_MANUAL_AUTH);
                         lastPageTwitch = true;
+                        hideSignUp();
                     }
                     break;
                 case PAGE_REDIRECTED:
@@ -151,6 +187,7 @@ public class Authentication {
         }
 
         @Override
-        public void dispatchResourceLoadEvent(long frame, int state, String url, String contentType, double progress, int errorCode) { }
+        public void dispatchResourceLoadEvent(long frame, int state, String url, String contentType, double progress, int errorCode) {
+        }
     }
 }

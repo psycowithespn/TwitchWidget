@@ -7,16 +7,16 @@ import java.util.Map;
 public abstract class APIResponse {
 
     @SerializedName("_links")   private Map<String, String> links;
-    private int status;
+    private int statusCode;
     @SerializedName("error")    private String error;
     @SerializedName("message")  private String message;
 
-    public int getStatus() {
-        return (int) status;
+    public int getStatusCode() {
+        return (int) statusCode;
     }
 
-    public void setStatus(int status) {
-        this.status = status;
+    public void setStatusCode(int statusCode) {
+        this.statusCode = statusCode;
     }
 
     public String getError() {
